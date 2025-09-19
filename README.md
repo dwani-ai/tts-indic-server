@@ -1,5 +1,39 @@
 # TTS Indic Server
 
+<!-- 
+ sudo docker build -t slabstech/dwani-tts:latest .
+
+
+sudo docker run --runtime nvidia -it --rm -p 7864:7864 slabstech/dwani-tts
+
+sudo docker run --runtime nvidia -it --rm -p 7864:7864 -e HF_TOKEN=$HF_TOKEN slabstech/dwani-tts
+
+sudo docker run --runtime nvidia -it --rm \
+    -p 7864:7864 \
+    -v ~/hf-cache:/data/hf-cache \
+    -e HF_HOME=/data/hf-cache \
+    -e HF_TOKEN=$HF_TOKEN \
+    slabstech/dwani-tts
+
+-->
+```bash
+git clone https://github.com/dwani-ai/tts-indic-server
+cd tts-indic-server
+
+
+python -m venv  venv
+source venv/bin/activate
+pip install wheel packaging
+
+pip install -r requirements.txt
+
+ pip uninstall torch torchaudio torchvision
+
+pip install torch==2.7.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+python src/gh200/main.py --host 0.0.0.0 --port 7864 --config config_two
+```
+
 ## Overview
 Text to Speech (TTS) for Indian languages using [ai4bharat/IndicF5](https://huggingface.co/ai4bharat/IndicF5)  model.
 
