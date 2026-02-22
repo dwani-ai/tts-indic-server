@@ -3,43 +3,7 @@ import torch
 from transformers import AutoModel
 from logging_config import logger
 from config.settings import Settings
-from config.constants import SUPPORTED_LANGUAGES
 from utils.device_utils import setup_device
-from utils.time_utils import time_to_words
-from fastapi import HTTPException
-from PIL import Image
-from typing import List, Dict, Any
-import torch
-from PIL import Image
-from typing import List, Dict, Any
-#import logging
-import os
-import time
-from contextlib import nullcontext
-
-#logger = logging.getLogger(__name__)
-import torch
-from PIL import Image
-from typing import List, Dict, Any
-import logging
-import os
-import time
-from contextlib import nullcontext
-import asyncio
-import hashlib
-
-
-def resize_image(image: Image.Image, max_size: int = 512) -> Image.Image:
-    """Resize image to ensure consistent dimensions while preserving aspect ratio."""
-    start_time = time.time()
-    image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-    logger.debug(f"Resized image to max_size={max_size} in {time.time() - start_time:.3f}s")
-    return image
-
-def get_image_hash(image: Image.Image) -> str:
-    """Generate a hash for an image to enable caching."""
-    image_bytes = image.convert("RGB").tobytes()
-    return hashlib.md5(image_bytes).hexdigest()
 
 
 # Device setup
@@ -51,13 +15,10 @@ settings = Settings()
 # Manager Registry
 class ManagerRegistry:
     def __init__(self):
-        self.llm_manager = None
         self.tts_manager = None
 
 # Singleton registry instance
 registry = ManagerRegistry()
-
-
 
 # Updated TTS Manager
 class TTSManager:
@@ -86,20 +47,14 @@ class TTSManager:
         return self.model(text, ref_audio_path=ref_audio_path, ref_text=ref_text)
 
 
-def initialize_managers(config_name: str, args):
+def initialize_managers():
     from config.settings import load_config
     config_data = load_config()
-    if config_name not in config_data["configs"]:
-        raise ValueError(f"Invalid config: {config_name}. Available: {list(config_data['configs'].keys())}")
-    
-    selected_config = config_data["configs"][config_name]
     global_settings = config_data["global_settings"]
 
-    settings.llm_model_name = selected_config["components"]["LLM"]["model"]
-    settings.max_tokens = selected_config["components"]["LLM"]["max_tokens"]
+ 
     settings.host = global_settings["host"]
     settings.port = global_settings["port"]
-    settings.chat_rate_limit = global_settings["chat_rate_limit"]
     settings.speech_rate_limit = global_settings["speech_rate_limit"]
 
     registry.tts_manager = TTSManager()

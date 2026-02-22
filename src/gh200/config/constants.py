@@ -1,17 +1,4 @@
 # config/constants.py
-from transformers import BitsAndBytesConfig
-import torch
-
-# Supported languages for translation and chat
-SUPPORTED_LANGUAGES = {
-    "asm_Beng", "kas_Arab", "pan_Guru", "ben_Beng", "kas_Deva", "san_Deva",
-    "brx_Deva", "mai_Deva", "sat_Olck", "doi_Deva", "mal_Mlym", "snd_Arab",
-    "eng_Latn", "mar_Deva", "snd_Deva", "gom_Deva", "mni_Beng", "tam_Taml",
-    "guj_Gujr", "mni_Mtei", "tel_Telu", "hin_Deva", "npi_Deva", "urd_Arab",
-    "kan_Knda", "ory_Orya",
-    "deu_Latn", "fra_Latn", "nld_Latn", "spa_Latn", "ita_Latn",
-    "por_Latn", "rus_Cyrl", "pol_Latn"
-}
 
 # Example audio references for TTS
 EXAMPLES = [
@@ -28,10 +15,3 @@ LANGUAGE_TO_SCRIPT = {
     "kannada": "kan_Knda"
 }
 
-# Quantization configuration for LLM
-QUANTIZATION_CONFIG = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_compute_dtype=torch.bfloat16
-)

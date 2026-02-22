@@ -5,14 +5,12 @@ from pydantic_settings import BaseSettings
 from pydantic import field_validator
 
 class Settings(BaseSettings):
-    llm_model_name: str = "google/gemma-3-27b-it"
-    max_tokens: int = 512
+
     host: str = "0.0.0.0"
-    port: int = 7860
-    chat_rate_limit: str = "100/minute"
+    port: int = 7864
     speech_rate_limit: str = "5/minute"
 
-    @field_validator("chat_rate_limit", "speech_rate_limit")
+    @field_validator("speech_rate_limit")
     def validate_rate_limit(cls, v):
         if not v.count("/") == 1 or not v.split("/")[0].isdigit():
             raise ValueError("Rate limit must be in format 'number/period' (e.g., '5/minute')")
