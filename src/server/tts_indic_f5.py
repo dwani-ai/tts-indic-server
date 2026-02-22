@@ -9,6 +9,7 @@ torchdiffeq.odeint; Dynamo tracing breaks the ODE solver (AssertionError: t must
 be strictly increasing or decreasing). Use --compile only to experiment; it may fail.
 """
 import argparse
+import os
 import time
 from pathlib import Path
 
@@ -72,11 +73,21 @@ def parse_args():
         action="store_true",
         help="Use float32 on GPU (for baseline comparison; default is bfloat16 on GPU).",
     )
+    p.add_argument(
+        "--steps",
+        type=int,
+        default=None,
+        metavar="N",
+        help="NFE steps for flow-matching (default: 32). Use 16 for ~2x speed, slight quality trade-off.",
+    )
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+    if args.steps is not None:
+        os.environ["TTS_NFE_STEPS"] = str(args.steps)
+        # Must be set before f5_tts is imported (happens when HF model loads)
     use_compile = (DEVICE != "cpu") and args.compile
     dtype = torch.float32 if args.float32 else TORCH_DTYPE
 
@@ -152,9 +163,11 @@ def main():
     rtf = avg_s / audio_duration_s if audio_duration_s > 0 else 0
 
     print()
+    nfe_steps = int(os.environ.get("TTS_NFE_STEPS", "32"))
     print("--- Speed (Phase 1) ---")
     print(f"  compile      : {'yes (reduce-overhead)' if use_compile else 'no'}")
     print(f"  dtype        : {dtype}")
+    print(f"  NFE steps    : {nfe_steps}")
     print(f"  warmup runs  : {args.warmup_runs}")
     print(f"  timed runs   : {args.timed_runs}")
     print(f"  audio length : {audio_duration_s:.2f} s ({len(audio_np)} samples @ {OUTPUT_SR} Hz)")

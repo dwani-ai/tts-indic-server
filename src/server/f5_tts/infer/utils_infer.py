@@ -46,7 +46,8 @@ mel_spec_type = "vocos"
 target_rms = 0.1
 cross_fade_duration = 0.15
 ode_method = "euler"
-nfe_step = 32  # 16, 32
+# NFE steps: fewer = faster, slight quality trade-off. Set TTS_NFE_STEPS=16 for ~2x speedup.
+nfe_step = int(os.environ.get("TTS_NFE_STEPS", "32"))
 cfg_strength = 2.0
 sway_sampling_coef = -1.0
 speed = 1.0

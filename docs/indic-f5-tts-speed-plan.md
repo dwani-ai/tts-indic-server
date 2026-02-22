@@ -56,13 +56,13 @@ Speed-related changes (torch.compile, dtype, NFE, ONNX/TRT backends) should be i
 - **Caveat**: First call after compile can be slow; warmup is important. If you see recompilation issues, use `TORCH_LOGS="recompiles"` to debug (see [PyTorch compiler troubleshooting](https://pytorch.org/docs/stable/torch.compiler_troubleshooting.html)).
 - **Reference**: [README.md](../README.md) (torch.compile) and [indic-parler-tts-speed.md](indic-parler-tts-speed.md) (L4 reduce-overhead helped).
 
-### Step 1.2: Expose and reduce NFE steps (if API allows)
+### Step 1.2: Expose and reduce NFE steps (implemented)
 
-- F5 uses a flow-matching ODE; fewer steps = faster, with a possible small quality trade-off. The f5_tts infer uses `nfe_step = 32` (or 16); see `src/server/f5_tts/infer/utils_infer.py`.
-- **Check**: Whether the HuggingFace IndicF5 model’s `forward()` (from `trust_remote_code`) accepts a `steps` or similar argument. If it does:
-  - Add an optional parameter to your API (e.g. `steps=16` for “fast” mode).
-  - Run A/B tests (e.g. 16 vs 32) for latency and quality on your target hardware.
-- **If the HF model does not expose steps**: You can still try loading IndicF5 **via the original F5-TTS inference path** (same architecture, IndicF5 checkpoint + Indic vocab). [IndicF5 HF discussion](https://huggingface.co/ai4bharat/IndicF5/discussions/1) and [GitHub issue #10](https://github.com/AI4Bharat/IndicF5/issues/10) mention using the model with the original F5-TTS; that path typically exposes `steps` and `cfg_strength` in `infer_process()`.
+- F5 uses a flow-matching ODE; fewer steps = faster, with a possible small quality trade-off.
+- **Implemented:** `nfe_step` is read from the environment variable **`TTS_NFE_STEPS`** (default `32`) in `src/server/f5_tts/infer/utils_infer.py`. Set `TTS_NFE_STEPS=16` when starting the server for ~2× speedup. The reference script supports `--steps 16` (sets the env var before loading the model).
+- **Server:** `TTS_NFE_STEPS=16 python src/server/main.py --host 0.0.0.0 --port 10804`
+- **Reference script:** `python3 src/server/tts_indic_f5.py --steps 16`
+- Run A/B tests (e.g. 16 vs 32) for latency and quality on your hardware.
 
 ### Step 1.3: Ensure GPU memory and dtype
 
@@ -75,18 +75,21 @@ Speed-related changes (torch.compile, dtype, NFE, ONNX/TRT backends) should be i
 
 Using **bfloat16 + warmup** (no torch.compile; compile is off for IndicF5). Same text/ref, 5.79 s audio, 2 warmup + 3 timed runs.
 
-| Config   | time (avg) | time (min) | RTF    |
-|----------|------------|------------|--------|
-| bfloat16 | 3.67 s     | 3.67 s     | 0.634  |
-| float32  | 12.73 s    | 12.69 s    | 2.198  |
+| Config        | Steps | time (avg) | time (min) | RTF    |
+|---------------|-------|------------|------------|--------|
+| bfloat16      | 32    | 3.67 s     | 3.67 s     | 0.634  |
+| bfloat16      | 16    | 1.87 s     | 1.86 s     | 0.322  |
+| float32       | 32    | 12.73 s    | 12.69 s    | 2.198  |
 
-**Speedup: ~3.5×** (bfloat16 vs float32). Run: `python3 tts_indic_f5.py` (default bfloat16) vs `python3 tts_indic_f5.py --float32`, or `bash scripts/bench_phase1_compile.sh`.
+**Speedup:** ~3.5× (bfloat16 vs float32); **~2×** (16 steps vs 32 steps at bfloat16). For the server, set `TTS_NFE_STEPS=16` when starting to get the same ~2× gain (e.g. ~3–4 s per request instead of ~7 s). Run: `python3 tts_indic_f5.py` (default), `python3 tts_indic_f5.py --steps 16`, or `bash scripts/bench_phase1_compile.sh`.
 
 ---
 
 ## Phase 2: ONNX Runtime (GPU) Path
 
 **Goal**: Run the F5 Transformer (and optionally preprocess/decode) with ONNX Runtime using CUDA, for better GPU utilization and a path toward TensorRT-LLM later.
+
+**Runbook:** Step-by-step instructions for Ubuntu + NVIDIA GPU: [phase2-onnx-runbook.md](phase2-onnx-runbook.md).
 
 **Important**: Existing export scripts target **SWivid F5-TTS** checkpoints. IndicF5 uses the **same architecture** but different **checkpoint and vocab**. You will need to either adapt the export for IndicF5 or confirm compatibility (e.g. same tensor names and shapes).
 

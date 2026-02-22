@@ -118,7 +118,7 @@ Run the server using FastAPI with the desired language (e.g., Kannada):
   ```
 
 ### Evaluating Results
-You can evaluate the ASR transcription results using `curl` commands. Below are examples for Kannada audio samples.
+You can evaluate the TTS generation results using `curl` commands. Below are examples for Kannada audio samples.
 
 #### Kannada
 
@@ -130,8 +130,15 @@ curl -X 'POST' \
   -d '{
   "text": "ಉದ್ಯಾನದಲ್ಲಿ ಮಕ್ಕಳ ಆಟವಾಡುತ್ತಿದ್ದಾರೆ ಮತ್ತು ಪಕ್ಷಿಗಳು ಚಿಲಿಪಿಲಿ ಮಾಡುತ್ತಿವೆ."
 }' -o kannada-tts-out.wav
-
 ```
+
+With the default server (Phase 1 bfloat16), a sentence like the above typically returns in about 7–8 seconds on GPU.
+
+**Faster inference (fewer NFE steps):** Start the server with `TTS_NFE_STEPS=16` to reduce latency (e.g. ~4–6 s per request instead of ~7–8 s):
+  ```bash
+  TTS_NFE_STEPS=16 python src/server/main.py --host 0.0.0.0 --port 10804
+  ```
+  There is a small quality trade-off; try 24 if 16 is too low. The reference script (`tts_indic_f5.py --steps 16`) can be ~2 s for the same text because it runs a single batch; the API may chunk longer texts so end-to-end latency can be higher. For more speed options (ONNX, TensorRT-LLM), see [docs/indic-f5-tts-speed-plan.md](docs/indic-f5-tts-speed-plan.md).
 
 #### Hindi
 
