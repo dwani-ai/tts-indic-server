@@ -18,19 +18,20 @@ import torch
 import numpy as np
 import soundfile as sf
 from pathlib import Path
-from typing import Optional
+from typing import Optional, AsyncGenerator
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 import logging
-
+from transformers import AutoModel
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global TTS Manager (singleton-like)
+# Global TTS Manager
 class TTSManager:
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -42,13 +43,14 @@ class TTSManager:
             "ನಮ್‌ ಫ್ರಿಜ್ಜಲ್ಲಿ  ಕೂಲಿಂಗ್‌ ಸಮಸ್ಯೆ ಆಗಿ ನಾನ್‌ ಭಾಳ ದಿನದಿಂದ ಒದ್ದಾಡ್ತಿದ್ದೆ, "
             "ಆದ್ರೆ ಅದ್ನೀಗ ಮೆಕಾನಿಕ್ ಆಗಿರೋ ನಿಮ್‌ ಸಹಾಯ್ದಿಂದ ಬಗೆಹರಿಸ್ಕೋಬೋದು ಅಂತಾಗಿ ನಿರಾಳ ಆಯ್ತು ನಂಗೆ."
         )
+        self.is_loaded = False
 
     def load_model(self):
         if self.model is not None:
             return
             
         logger.info(f"Loading IndicF5 from {self.repo_id}@{self.revision} on {self.device}...")
-        from transformers import AutoModel
+        
         
         try:
             self.model = AutoModel.from_pretrained(
@@ -58,6 +60,7 @@ class TTSManager:
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             )
             self.model = self.model.to(self.device)
+            self.is_loaded = True
             logger.info("✅ Model loaded successfully")
         except Exception as e:
             logger.error(f"❌ Failed to load model: {e}")
@@ -92,6 +95,25 @@ class TTSManager:
 # Initialize global manager
 tts_manager = TTSManager()
 
+# LIFESPAN EVENT HANDLER (replaces @app.on_event("startup"))
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    # STARTUP (runs before server starts accepting requests)
+    logger.info("🚀 Starting IndicF5 TTS Server...")
+    try:
+        os.makedirs("prompts", exist_ok=True)
+        tts_manager.load_model()
+        logger.info("✅ Server ready!")
+    except Exception as e:
+        logger.error(f"❌ Startup failed: {e}")
+        raise
+    
+    yield  # Server runs here
+    
+    # SHUTDOWN (runs when server stops)
+    logger.info("🛑 Server shutting down...")
+    # Cleanup code here if needed
+
 # Pydantic models
 class TTSRequest(BaseModel):
     text: str
@@ -103,11 +125,12 @@ class TTSResponse(BaseModel):
     message: str
     duration: Optional[float] = None
 
-# FastAPI app
+# FastAPI app with lifespan
 app = FastAPI(
     title="IndicF5 TTS API",
-    description="Single-file TTS server using AI4Bharat IndicF5",
-    version="1.0.0"
+    description="Single-file TTS server using AI4Bharat IndicF5 (No deprecation warnings!)",
+    version="1.0.0",
+    lifespan=lifespan  # ✅ Modern lifespan handler
 )
 
 app.add_middleware(
@@ -118,25 +141,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup():
-    try:
-        tts_manager.load_model()
-    except Exception as e:
-        logger.error(f"Startup failed: {e}")
-
 @app.get("/")
 async def root():
     return {
         "message": "IndicF5 TTS API 🚀",
         "model": f"{tts_manager.repo_id}@{tts_manager.revision}",
         "device": tts_manager.device,
-        "status": "ready" if tts_manager.model else "loading..."
+        "model_loaded": tts_manager.is_loaded,
+        "status": "ready"
     }
 
 @app.post("/tts/synthesize", response_model=TTSResponse)
 async def synthesize_speech(request: TTSRequest):
-    """Generate speech from text"""
+    """Generate speech from text (JSON response)"""
     try:
         audio = tts_manager.synthesize(
             text=request.text,
@@ -144,7 +161,6 @@ async def synthesize_speech(request: TTSRequest):
             ref_text=request.ref_text
         )
         
-        # Save temp file
         timestamp = int(time.time())
         wav_path = f"temp_audio_{timestamp}.wav"
         sf.write(wav_path, audio, 24000)
@@ -167,7 +183,6 @@ async def synthesize_file(request: TTSRequest):
             ref_text=request.ref_text
         )
         
-        # Create in-memory WAV file
         timestamp = int(time.time())
         wav_path = f"temp_audio_{timestamp}.wav"
         sf.write(wav_path, audio, 24000)
@@ -189,13 +204,13 @@ async def synthesize_file(request: TTSRequest):
 async def health():
     return {
         "status": "healthy",
-        "model_loaded": tts_manager.model is not None,
+        "model_loaded": tts_manager.is_loaded,
         "device": tts_manager.device
     }
 
 if __name__ == "__main__":
-    # Create prompts directory if missing
-    os.makedirs("prompts", exist_ok=True)
     print("🎵 IndicF5 TTS Server Starting...")
+    print("📁 Place KAN_F_HAPPY_00001.wav in 'prompts/' directory")
     print("🌐 Open http://localhost:8000/docs for interactive API")
+    print("✅ No deprecation warnings!")
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
