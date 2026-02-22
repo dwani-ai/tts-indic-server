@@ -21,3 +21,26 @@ Code is provided in the repository to try out both models which can be utilized 
 
 ---
 
+Star the repository  <> https://github.com/dwani-ai/tts-indic-server  
+to get future updates and use it in your projects 
+
+---
+
+Steps to run the project <> 
+    - local installation
+    - using docker images
+
+
+Follow the steps in README file for installation 
+
+---    
+
+You can try out different outputs running on dwani server at 
+
+workshop.dwani.ai 
+
+---
+
+The APIs will be further available at your University with a dedicated dwani installation 
+
+--
