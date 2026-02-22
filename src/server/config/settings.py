@@ -19,15 +19,10 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
-def load_config(config_path="dhwani_config.json"):
-    """Load configuration from a JSON file."""
-    with open(config_path, "r") as f:
-        return json.load(f)
 
 def parse_arguments():
     """Parse command-line arguments for the server."""
     parser = argparse.ArgumentParser(description="Run the FastAPI server.")
     parser.add_argument("--port", type=int, default=Settings().port, help="Port to run the server on.")
     parser.add_argument("--host", type=str, default=Settings().host, help="Host to run the server on.")
-    parser.add_argument("--config", type=str, default="config_one", help="Configuration to use")
     return parser.parse_args()

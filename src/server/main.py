@@ -15,7 +15,7 @@ from logging_config import logger
 
 # Import extracted modules
 from config.settings import parse_arguments
-from config.constants import SUPPORTED_LANGUAGES, LANGUAGE_TO_SCRIPT, QUANTIZATION_CONFIG
+from config.constants import  LANGUAGE_TO_SCRIPT
 from utils.audio_utils import load_audio_from_url as load_audio_from_url_original
 from utils.tts_utils import load_audio_from_url, synthesize_speech, SynthesizeRequest, KannadaSynthesizeRequest, EXAMPLES
 
@@ -23,7 +23,7 @@ from core.managers import registry, initialize_managers
 from routes.speech import router as speech_router
 
 # Parse arguments early
-args = []
+args = parse_arguments()
 
 # Lifespan Event Handler
 @asynccontextmanager

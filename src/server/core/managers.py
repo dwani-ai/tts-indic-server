@@ -48,14 +48,6 @@ class TTSManager:
 
 
 def initialize_managers():
-    from config.settings import load_config
-    config_data = load_config()
-    global_settings = config_data["global_settings"]
-
- 
-    settings.host = global_settings["host"]
-    settings.port = global_settings["port"]
-    settings.speech_rate_limit = global_settings["speech_rate_limit"]
 
     registry.tts_manager = TTSManager()
 
