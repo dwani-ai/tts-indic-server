@@ -92,7 +92,7 @@ python tts_indic_f5.py
 ```
 
 <!-- 
- sudo docker build -t slabstech/dwani-tts:latest .
+ docker build -t dwani/tts-indic-server:latest .
 
 
 sudo docker run --runtime nvidia -it --rm -p 7864:7864 slabstech/dwani-tts
