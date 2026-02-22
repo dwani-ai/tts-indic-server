@@ -136,6 +136,8 @@ Using **bfloat16 + warmup** (no torch.compile; compile is off for IndicF5). Same
 
 **Goal**: Replace the F5 **Transformer** with a TensorRT-LLM engine to achieve the ~4× speedup reported by [F5_TTS_Faster](https://github.com/WGS-note/F5_TTS_Faster) (e.g. 3.2s → 0.72s on RTX 3090). Preprocess and vocoder can remain ONNX/PyTorch.
 
+**Runbook (skip Phase 2):** [phase3-tensorrt-runbook.md](phase3-tensorrt-runbook.md) — export IndicF5 transformer, convert to TRT-LLM, build engine, run inference. Export script: `scripts/export_indicf5_for_trtllm.py`.
+
 **Note**: Build and conversion are heavy (~3h build mentioned in F5_TTS_Faster). Recommended to run in a **tmux** session on an Ubuntu machine with NVIDIA GPU and sufficient disk space.
 
 ### Step 3.1: Environment (Ubuntu + NVIDIA GPU)
