@@ -1,6 +1,6 @@
 # core/managers.py
 import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, AutoProcessor, AutoModel, Gemma3ForConditionalGeneration, BitsAndBytesConfig
+from transformers import AutoModel
 from logging_config import logger
 from config.settings import Settings
 from config.constants import SUPPORTED_LANGUAGES
@@ -57,21 +57,6 @@ class ManagerRegistry:
 # Singleton registry instance
 registry = ManagerRegistry()
 
-enable_quantization = os.getenv("ENABLE_QUANTIZATION", "false").lower() == "true"
-                
-# Set quantization config based on environment variable
-quantization_config = None
-if enable_quantization:
-    quantization_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.bfloat16
-    )
-    logger.info("Quantization enabled via environment variable")
-else:
-    logger.info("Quantization disabled")
-
 
 
 # Updated TTS Manager
@@ -117,9 +102,6 @@ def initialize_managers(config_name: str, args):
     settings.chat_rate_limit = global_settings["chat_rate_limit"]
     settings.speech_rate_limit = global_settings["speech_rate_limit"]
 
-    #registry.llm_manager = LLMManager(settings.llm_model_name)
-    #registry.model_manager = ModelManager()
-    #registry.asr_manager = ASRModelManager()
     registry.tts_manager = TTSManager()
 
     

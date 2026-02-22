@@ -16,20 +16,23 @@ sudo docker run --runtime nvidia -it --rm \
     slabstech/dwani-tts
 
 -->
+
+Login to HuggingFace account 
+
+Request permission for access from https://huggingface.co/ai4bharat/IndicF5
+
+export HF_TOKEN="HF_TOKEN_Account"
+
 ```bash
 git clone https://github.com/dwani-ai/tts-indic-server
 cd tts-indic-server
 
 
-python -m venv  venv
+python3.10 -m venv  venv
 source venv/bin/activate
-pip install wheel packaging
 
-pip install -r requirements.txt
+pip install -r tts-requirements.txt
 
- pip uninstall torch torchaudio torchvision
-
-pip install torch==2.7.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 python src/gh200/main.py --host 0.0.0.0 --port 7864 --config config_two
 ```
