@@ -1,11 +1,12 @@
 # core/managers.py
+# Phase 1 speedup: bfloat16 on GPU (see docs/indic-f5-tts-speed-plan.md).
 import torch
 from transformers import AutoModel
 from logging_config import logger
 from config.settings import Settings
 from utils.device_utils import setup_device
 
-# Device setup
+# Device setup (bfloat16 on GPU for ~3.5x speedup vs float32)
 device, torch_dtype = setup_device()
 
 # Initialize settings
@@ -36,17 +37,17 @@ class TTSManager:
 
         logger.info(
             f"Loading TTS model IndicF5 from '{self.repo_id}' "
-            f"at revision '{self.revision}' on device '{self.device_type}'..."
+            f"at revision '{self.revision}' on device '{self.device_type}' ({torch_dtype})..."
         )
         try:
             self.model = AutoModel.from_pretrained(
                 self.repo_id,
-                trust_remote_code=True,      # required for IndicF5
-                revision=self.revision,      # pin revision
-                torch_dtype=torch_dtype,     # optional, if you want to control dtype
+                trust_remote_code=True,  # required for IndicF5
+                revision=self.revision,
+                torch_dtype=torch_dtype,  # bfloat16 on GPU for Phase 1 speedup
             )
             self.model = self.model.to(self.device_type)
-            logger.info("TTS model IndicF5 loaded successfully")
+            logger.info("TTS model IndicF5 loaded successfully (%s)", torch_dtype)
         except Exception as e:
             logger.error(f"Failed to load TTS model IndicF5: {e}")
             self.model = None

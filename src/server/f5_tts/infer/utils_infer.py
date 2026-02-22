@@ -46,7 +46,8 @@ mel_spec_type = "vocos"
 target_rms = 0.1
 cross_fade_duration = 0.15
 ode_method = "euler"
-nfe_step = 32  # 16, 32
+# NFE steps: fewer = faster, slight quality trade-off. Set TTS_NFE_STEPS=16 for ~2x speedup.
+nfe_step = int(os.environ.get("TTS_NFE_STEPS", "32"))
 cfg_strength = 2.0
 sway_sampling_coef = -1.0
 speed = 1.0
@@ -465,7 +466,9 @@ def infer_batch_process(
                 sway_sampling_coef=sway_sampling_coef,
             )
 
-            generated = generated.to(torch.float32)
+            # Cast to vocoder dtype so input and weights match (e.g. both bfloat16 when model is bfloat16).
+            vocoder_dtype = next(vocoder.parameters()).dtype
+            generated = generated.to(vocoder_dtype)
             generated = generated[:, ref_audio_len:, :]
             generated_mel_spec = generated.permute(0, 2, 1)
             if mel_spec_type == "vocos":
@@ -475,11 +478,11 @@ def infer_batch_process(
             if rms < target_rms:
                 generated_wave = generated_wave * rms / target_rms
 
-            # wav -> numpy
-            generated_wave = generated_wave.squeeze().cpu().numpy()
+            # wav -> numpy (float32 for downstream / WAV)
+            generated_wave = generated_wave.squeeze().cpu().float().numpy()
 
             generated_waves.append(generated_wave)
-            spectrograms.append(generated_mel_spec[0].cpu().numpy())
+            spectrograms.append(generated_mel_spec[0].cpu().float().numpy())
 
     # Combine all generated waves with cross-fading
     if cross_fade_duration <= 0:

@@ -1,5 +1,6 @@
 Indic - F5-tts
 
+**→ Step-by-step speed plan (Ubuntu + NVIDIA GPU): [indic-f5-tts-speed-plan.md](indic-f5-tts-speed-plan.md)**
 
 https://github.com/AI4Bharat/IndicF5
 

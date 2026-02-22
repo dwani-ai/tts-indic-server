@@ -45,7 +45,7 @@ class TextEmbedding(nn.Module):
         batch_start = torch.zeros((text.shape[0],), dtype=torch.long)
         batch_text_len = text.shape[1]
         pos_idx = get_pos_embed_indices(batch_start, batch_text_len, max_pos=self.precompute_max_pos)
-        text_pos_embed = self.freqs_cis[pos_idx]
+        text_pos_embed = self.freqs_cis[pos_idx].to(text.dtype)
 
         text = text + text_pos_embed
 
