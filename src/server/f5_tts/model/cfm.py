@@ -162,6 +162,9 @@ class CFM(nn.Module):
         def fn(t, x):
             # at each step, conditioning is fixed
             # step_cond = torch.where(cond_mask, cond, torch.zeros_like(cond))
+            # Cast t to model dtype so transformer (e.g. bfloat16) does not get float32 and trigger dtype mismatch.
+            t_dtype = step_cond.dtype
+            t = t.to(t_dtype) if t.dtype != t_dtype else t
 
             # predict flow
             pred = self.transformer(
@@ -193,7 +196,9 @@ class CFM(nn.Module):
             y0 = (1 - t_start) * y0 + t_start * test_cond
             steps = int(steps * (1 - t_start))
 
-        t = torch.linspace(t_start, 1, steps + 1, device=self.device, dtype=step_cond.dtype)
+        # Use float32 for ODE time grid so it stays strictly monotonic (bfloat16 can
+        # produce duplicate/non-monotonic values and trigger torchdiffeq assertion).
+        t = torch.linspace(t_start, 1, steps + 1, device=self.device, dtype=torch.float32)
         if sway_sampling_coef is not None:
             t = t + sway_sampling_coef * (torch.cos(torch.pi / 2 * t) - 1 + t)
 
