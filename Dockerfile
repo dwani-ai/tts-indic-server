@@ -1,6 +1,6 @@
 
 # CUDA 12.8 + cuDNN (devel image so you can compile stuff)
-FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 
 # Non-interactive apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,6 +21,10 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Upgrade pip
 RUN python -m pip install --upgrade pip
 
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --no-deps -r requirements.txt
+
 
 # Set working directory
 WORKDIR /app
@@ -29,7 +33,6 @@ WORKDIR /app
 # Copy the rest of the application code
 COPY . .
 
-RUN pip install -r requirements.txt
 
 # Expose port for the API
 EXPOSE 10804
