@@ -1,12 +1,13 @@
 services:
   tts-indic-server:
-    image: slabstech/tts_indic_server
+    image: dwani/tts-indic-server:latest
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
     ports:
-      - 7860:7860
-    environment:
-      - LANGUAGE=kn
+      - 10804:10804
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
     deploy:
       resources:
         reservations:
