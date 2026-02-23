@@ -74,9 +74,12 @@ def main():
 
     # Normalize to transformer-only keys with "ema_model.transformer." prefix
     # convert_checkpoint.py expects ema_model_state_dict with keys like "ema_model.transformer.xxx"
+    # _orig_mod appears when the model was saved after torch.compile() (keys like ema_model._orig_mod.transformer.*)
     ema_model_state_dict = {}
     for k, v in state_dict.items():
-        if k.startswith("ema_model.transformer."):
+        if k.startswith("ema_model._orig_mod.transformer."):
+            new_key = "ema_model.transformer." + k[len("ema_model._orig_mod.transformer."):]
+        elif k.startswith("ema_model.transformer."):
             new_key = k
         elif k.startswith("transformer."):
             new_key = "ema_model." + k

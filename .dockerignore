@@ -2,7 +2,7 @@
 *.pyc
 *.pyo
 *.pyd
-
+phase3_ckpts/
 # Ignore all virtual environments
 venv/
 env/

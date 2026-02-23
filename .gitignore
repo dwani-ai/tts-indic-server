@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 venv_new/
 NeMo/
+phase3_ckpts/
 ! prompts/KAN_F_HAPPY_00001.wav
 asr_venv
 *.nemo
