@@ -21,6 +21,10 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Upgrade pip
 RUN python -m pip install --upgrade pip
 
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --no-deps -r requirements.txt
+
 
 # Set working directory
 WORKDIR /app
@@ -29,7 +33,6 @@ WORKDIR /app
 # Copy the rest of the application code
 COPY . .
 
-RUN pip install -r requirements.txt
 
 # Expose port for the API
 EXPOSE 10804
