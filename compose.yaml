@@ -5,9 +5,9 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
     ports:
       - 10804:10804
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    environment:
+      - HF_TOKEN
     deploy:
       resources:
         reservations:
