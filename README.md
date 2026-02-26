@@ -47,17 +47,21 @@ Text to Speech (TTS) for Indian languages using [ai4bharat/IndicF5](https://hugg
     pip install -r requirements.txt
     ```
 
-## Downloading Indic TTS Model
+## Downloading TTS Models
+Models can be downloaded from AI4Bharat's HuggingFace repository:
 
+- [https://huggingface.co/ai4bharat/IndicF5](https://huggingface.co/ai4bharat/IndicF5)
+  - Log in HuggingFace Account
+  - Request Access to the model
+  - https://huggingface.co/docs/hub/security-tokens 
+    - Get a Read token for your account
 
-Login to HuggingFace account 
-
-Request permission for access from https://huggingface.co/ai4bharat/IndicF5
-
-export HF_TOKEN="HF_TOKEN_Account"
+    ```bash
+    export HF_TOKEN=<YOUR-READ-TOKEN-HERE>
+    ```
 
 ```bash download_model.sh
-huggingface_cli download ai4bharat/IndicF5
+hf download ai4bharat/IndicF5
 ```
 
 ### Local Model Run
@@ -92,10 +96,8 @@ python tts_indic_f5.py
 ```
 
 <!-- 
- docker build -t dwani/tts-indic-server:latest .
 
 
-sudo docker run --runtime nvidia -it --rm -p 7864:7864 slabstech/dwani-tts
 
 sudo docker run --runtime nvidia -it --rm -p 7864:7864 -e HF_TOKEN=$HF_TOKEN slabstech/dwani-tts
 
@@ -112,7 +114,7 @@ sudo docker run --runtime nvidia -it --rm \
 
 
 Run the server using FastAPI with the desired language (e.g., Kannada):
-- With GPU
+- 
   ```bash
     python src/server/main.py --host 0.0.0.0 --port 10804
   ```
@@ -132,23 +134,6 @@ curl -X 'POST' \
 }' -o kannada-tts-out.wav
 ```
 
-With the default server (Phase 1 bfloat16), a sentence like the above typically returns in about 7–8 seconds on GPU. **Check success:** the output file should be ~250–260 KB (e.g. `ls -l kannada-tts-out.wav`). If you see a tiny file (e.g. 21–233 bytes), the server returned an error (e.g. 503 model not loaded, 500 ref audio failed); check server logs.
-
-**Faster inference (fewer NFE steps):** Start the server with `TTS_NFE_STEPS=16` to reduce latency (e.g. ~4–6 s per request instead of ~7–8 s):
-  ```bash
-  TTS_NFE_STEPS=16 python src/server/main.py --host 0.0.0.0 --port 10804
-  ```
-  There is a small quality trade-off; try 24 if 16 is too low.   The reference script (`tts_indic_f5.py --steps 16`) can be ~2 s for the same text because it runs a single batch; the API may chunk longer texts so end-to-end latency can be higher.
-
-**Further speed improvements** (see [docs/indic-f5-tts-speed-plan.md](docs/indic-f5-tts-speed-plan.md) for details):
-
-| Option | Effort | Expected gain | Notes |
-|--------|--------|---------------|--------|
-| **Fewer NFE steps** | Done | ~2× with 16 steps | Use `TTS_NFE_STEPS=16` (or try 12/8; more quality loss). |
-| **Phase 2: ONNX Runtime** | Medium | Moderate | Export F5 to ONNX, run with `onnxruntime-gpu` + I/O binding. [Phase 2 runbook](docs/phase2-onnx-runbook.md). |
-| **Phase 3: TensorRT-LLM** | High (~3 h build) | **~4×** (e.g. 3 s → 0.7 s) | Replace Transformer with TRT-LLM engine; path to near real-time. [Runbook](docs/phase3-tensorrt-runbook.md), [F5_TTS_Faster](https://github.com/WGS-note/F5_TTS_Faster). |
-| **Phase 4: Triton server** | High | Same as Phase 3, scalable | Deploy TRT-LLM behind Triton for production. |
-| **Faster GPU** | N/A | Scales with GPU | e.g. L4/A100 vs older cards. |
 
 #### Hindi
 
@@ -169,6 +154,29 @@ curl -X 'POST' \
 curl -s -H "content-type: application/json" localhost:7860/v1/audio/speech -d '{"input": "Hey, how are you?", "response_type": "wav"}' -o audio.wav
 ```
 
+- [For Production (Docker)](#for-production-docker)
+### For Production (Docker)
+- **Prerequisites**: Docker and Docker Compose
+- **Steps**:
+  1. **Start the server**:
+  ```bash
+  export HF_TOKEN=<YOUR-READ-TOKEN-HERE>
+  docker compose -f compose.yaml up -d
+  ```
+
+
+## Building Docker Image
+Build the Docker image locally:
+```bash
+docker build -t dwani/tts-indic-server:latest .
+
+```
+
+### Run the Docker Image
+```bash
+docker run --runtime nvidia -it --rm -p 10804:10804 -e HF_TOKEN=$HF_TOKEN dwani/tts-indic-server:latest
+
+```
 
 ## Contributing
 
@@ -214,22 +222,28 @@ Also you can join the [discord group](https://discord.gg/WZMCerEZ2P) to collabor
 
 ```
 
+<!-- 
+With the default server (Phase 1 bfloat16), a sentence like the above typically returns in about 7–8 seconds on GPU. **Check success:** the output file should be ~250–260 KB (e.g. `ls -l kannada-tts-out.wav`). If you see a tiny file (e.g. 21–233 bytes), the server returned an error (e.g. 503 model not loaded, 500 ref audio failed); check server logs.
+
+**Faster inference (fewer NFE steps):** Start the server with `TTS_NFE_STEPS=16` to reduce latency (e.g. ~4–6 s per request instead of ~7–8 s):
+  ```bash
+  TTS_NFE_STEPS=16 python src/server/main.py --host 0.0.0.0 --port 10804
+  ```
+  There is a small quality trade-off; try 24 if 16 is too low.   The reference script (`tts_indic_f5.py --steps 16`) can be ~2 s for the same text because it runs a single batch; the API may chunk longer texts so end-to-end latency can be higher.
+
+**Further speed improvements** (see [docs/indic-f5-tts-speed-plan.md](docs/indic-f5-tts-speed-plan.md) for details):
+
+| Option | Effort | Expected gain | Notes |
+|--------|--------|---------------|--------|
+| **Fewer NFE steps** | Done | ~2× with 16 steps | Use `TTS_NFE_STEPS=16` (or try 12/8; more quality loss). |
+| **Phase 2: ONNX Runtime** | Medium | Moderate | Export F5 to ONNX, run with `onnxruntime-gpu` + I/O binding. [Phase 2 runbook](docs/phase2-onnx-runbook.md). |
+| **Phase 3: TensorRT-LLM** | High (~3 h build) | **~4×** (e.g. 3 s → 0.7 s) | Replace Transformer with TRT-LLM engine; path to near real-time. [Runbook](docs/phase3-tensorrt-runbook.md), [F5_TTS_Faster](https://github.com/WGS-note/F5_TTS_Faster). |
+| **Phase 4: Triton server** | High | Same as Phase 3, scalable | Deploy TRT-LLM behind Triton for production. |
+| **Faster GPU** | N/A | Scales with GPU | e.g. L4/A100 vs older cards. |
+-->
+
 
 <!--
-
-
-
-## Alternate forms of Development  
-
-- Check the torch.compile option for fast inference.
-  - Suitable on Nvidia L4 GPU
-  - Source for fast inference - [torch.compile](torch_compile.py) example
-
-- Streaming example
-  - [source code](tts_streaming.py)
-
-
-
 
 ## Usage
 
@@ -246,33 +260,4 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{"input": "ಉದ್ಯಾನದಲ್ಲಿ ಮಕ್ಕಳ ಆಟವಾಡುತ್ತಿದ್ದಾರೆ ಮತ್ತು ಪಕ್ಷಿಗಳು ಚಿಲಿಪಿಲಿ ಮಾಡುತ್ತಿವೆ.", "voice": "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speakers voice sounding clear and very close up."}'  -o audio_kannada_gpu_cloud.mp3
 ```
--->
-
-<!-- 
-  - [For Production (Docker)](#for-production-docker)
-### For Production (Docker)
-- **Prerequisites**: Docker and Docker Compose
-- **Steps**:
-  1. **Start the server**:
-  For GPU
-  ```bash
-  docker compose -f compose.yaml up -d
-  ```
-  For CPU only
-  ```bash
-  docker compose -f cpu-compose.yaml up -d
-  ```
-
-
-## Building Docker Image
-Build the Docker image locally:
-```bash
-docker build -t slabstech/tts_indic_server -f Dockerfile .
-```
-
-### Run the Docker Image
-```bash
-docker run --gpus all -it --rm -p 7860:7860 slabstech/tts_indic_server
-```
-
 -->
