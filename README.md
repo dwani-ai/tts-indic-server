@@ -14,14 +14,8 @@ Text to Speech (TTS) for Indian languages using [ai4bharat/IndicF5](https://hugg
     - [Hindi](#hindi)
   - [Specifying a Different Format](#specifying-a-different-format)
   - [Playing Back the Audio](#playing-back-the-audio)
-  - [Describing the Voice](#describing-the-voice)
-    - [Describing the Voice with Specific Speaker - Suresh](#describing-the-voice-with-specific-speaker---suresh)
-    - [Describing the Voice with Specific Speaker - Anu](#describing-the-voice-with-specific-speaker---anu)
 - [Building Docker Image](#building-docker-image)
 - [Run the Docker Image](#run-the-docker-image)
-- [Available Speakers](#available-speakers)
-- [Tips](#tips)
-- [Description Examples](#description-examples)
 - [Citations](#citations)
 
 
@@ -60,9 +54,9 @@ Models can be downloaded from AI4Bharat's HuggingFace repository:
     export HF_TOKEN=<YOUR-READ-TOKEN-HERE>
     ```
 
-```bash download_model.sh
-hf download ai4bharat/IndicF5
-```
+    ```bash download_model.sh
+    hf download ai4bharat/IndicF5
+    ```
 
 ### Local Model Run
 ```python
@@ -113,7 +107,7 @@ sudo docker run --runtime nvidia -it --rm \
 #### Running with FastAPI Server
 
 
-Run the server using FastAPI with the desired language (e.g., Kannada):
+Run the server using FastAPI
 - 
   ```bash
     python src/server/main.py --host 0.0.0.0 --port 10804
